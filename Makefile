@@ -2,6 +2,8 @@
 # ".env" file not stored in git, but ".env.example" is stored in git for reference; 
 include ./.env
 
+MAKE_TIME = $(shell date +"%FT%H:%M:%SZ")
+
 all: run
 
 clean:
@@ -58,4 +60,26 @@ build-db: clean-db
 	# build-db ##################################################
 	mkdir -p ./dist-db/db
 	cp -r ./src-db/resources ./dist-db
+
+build-oci: build
+	# build-oci ##################################################
+	docker build . -t $(OCI_NAME):latest --label "version=${OCI_VERSION}" --label "build=$(MAKE_TIME)"
+	docker image ls | grep $(OCI_NAME) 
+	docker image inspect $(OCI_NAME):latest
+	
+run-oci: 
+	# run-oci ##################################################
+	docker run  --name myapp --rm -p $(OCI_PORT):$(OCI_INT_PORT) -e OCI_PORT=$(OCI_PORT) -e DB_PORT=$(DB_PORT) -e DB_HOST=host.docker.internal -e DB_USER=$(DB_USER) -e DB_PASSWORD=$(DB_PASSWORD) -e DB_NAME=$(DB_NAME) -e LOG_LEVEL=debug $(OCI_NAME):latest
+
+save-oci:
+	# save-oci ##################################################
+	mkdir -p ./temp
+	docker save -o temp/$(OCI_NAME).tar $(OCI_NAME):latest
+	du -sh temp/$(OCI_NAME).tar
+# docker rmi $(OCI_NAME):latest
+
+load-oci:
+	# load-oci ##################################################
+	docker load -i temp/$(OCI_NAME).tar
+	docker image ls | grep $(OCI_NAME)
 
