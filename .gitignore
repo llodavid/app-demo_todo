@@ -1,8 +1,9 @@
 # ===== My ignores =====
 
-bin/
-public/
+dist/
+dist-db/
 node_modules/
+temp/
 
 # ===== Go ignores =====
 
