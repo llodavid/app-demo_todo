@@ -7,10 +7,6 @@ all: run
 clean:
 	rm -rf dist/
 
-generate-twc: 
-# alternative for watched generation of css using "npm run dev"; 
-	npx @tailwindcss/cli -i ./src/resources/style.tailwindcss.css -o ./dist/public/style.css
-
 run: 
 # run server from dist directory to easy access public files and to resemble situation after deployment;
 # for performance reasons, we don't generate css at development time for every run;
@@ -19,7 +15,7 @@ run:
 	cp -r ./src/resources ./dist
 	(cd ./dist && go run ../src) 
 
-build: clean generate-twc
+build: clean 
 # create dist directory from scratch with linux executable, resources and public files;
 # resulting directory can be used for linux oci deployment; 
 	# build ##################################################
