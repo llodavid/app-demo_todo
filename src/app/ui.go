@@ -7,28 +7,34 @@ import (
 )
 
 type Ui struct {
-	router  *http.ServeMux
-	storage *Storage
+	router *http.ServeMux
+	store  *Store
 }
 
-func NewUi(router *http.ServeMux, s *Storage) (Ui, error) {
-	ui := Ui{router: router, storage: s}
-	router.HandleFunc("/", ui.listHandleFunc)
+func NewUi(router *http.ServeMux, s *Store) (*Ui, error) {
+	slog.Debug("ui::NewUi() - Executing")
+	ui := &Ui{router: router, store: s}
+	router.HandleFunc("/", ui.getTodosHandler)
 	return ui, nil
 }
 
-func (ui Ui) listHandleFunc(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("ui::listHandleFunc() - Started")
-	slog.Debug("ui::listHandleFunc() - Reading data", "storage", ui.storage.dsn)
-	d, err := ui.storage.FindAllTodos()
+func (ui *Ui) getTodosHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("ui::getTodosHandler() - Executing")
+	slog.Debug("ui::getTodosHandler() - Reading data", "storage", ui.store.dsn)
+	d, err := ui.store.GetTodos()
 	if err != nil {
+		slog.Error("ui::getTodosHandler() - Failed to access data", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	//
-	slog.Debug("ui::listHandleFunc() - Building response")
+	//ui.store.GetMappingtests1()
+	//ui.store.GetMappingtests2()
+	//
+	slog.Debug("ui::getTodosHandler() - Building response")
 	tmpl := template.Must(template.ParseFiles("./resources/list.html"))
 	err = tmpl.Execute(w, d)
 	if err != nil {
+		slog.Error("ui::getTodosHandler() - Failed to execute template", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

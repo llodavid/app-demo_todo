@@ -8,24 +8,28 @@
 </head>
 <body class="m-4">
 
-    <h1 class="text-2xl font-bold">List of tasks todo</h1>
+    <h1 class="text-2xl font-bold">Todos</h1>
 
     <table class="table-auto w-full mb-4">
         <thead>
             <tr>
+                <th class="px-4 py-2">Id</th>
                 <th class="px-4 py-2">Title</th>
                 <th class="px-4 py-2">Status</th>
                 <th class="px-4 py-2">Created At</th>
                 <th class="px-4 py-2">Completed At</th>
+                <th class="px-4 py-2">Version</th>
             </tr>
         </thead>
         <tbody>
             {{ range . }}
             <tr>
+                <td class="border px-4 py-2">{{ .Id }}</td>
                 <td class="border px-4 py-2">{{ .Title }}</td>
                 <td class="border px-4 py-2">{{ if .Completed }}Completed{{ else }}Pending{{ end }}</td>
                 <td class="border px-4 py-2">{{ .CreatedAt.Format "2006-01-02 15:04"}}</td>
                 <td class="border px-4 py-2">{{ if .CompletedAt }}{{ .CompletedAt.Format "2006-01-02 15:04" }}{{ end }}</td>
+                <td class="border px-4 py-2">{{ .Version }}</td>
             </tr>
             {{ end }}
         </tbody>

@@ -3,6 +3,7 @@
 dist/
 dist-db/
 node_modules/
+ops/*.tar
 temp/
 
 # ===== Go ignores =====

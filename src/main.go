@@ -10,32 +10,27 @@ import (
 	"time"
 )
 
-var storage *app.Storage
+var store *app.Store
 
 func main() {
 	commons.LoadEnvFile()
 	commons.InitLoggerFromEnv()
-	slog.Debug("main::main() - Started")
+	slog.Debug("main::main() - Executing")
 	//
-	dsn := os.Getenv("DB_DSN")
-	storageVal, err := app.NewStorage(dsn)
+	store, err := app.NewStore()
 	if err != nil {
-		slog.Error("main::main() - Failed to create storage", "error", err)
+		slog.Error("main::main() - Failed to create store", "error", err)
 		return
 	}
-	storage = &storageVal
-	defer storage.Destroy()
+	defer store.Destroy()
 	//
 	router := http.NewServeMux()
-	_, err = app.NewUi(router, storage)
-	if err != nil {
-		slog.Error("main::main() - Failed to create ui", "error", err)
-		return
-	}
+	app.NewUi(router, store)
 	//
+	srv, _ := commons.NewServer(router)
+	host := os.Getenv("APP_HOST")
 	port := os.Getenv("APP_PORT")
-	srv := commons.NewServer(router, port)
-	slog.Info("main::main() - Web Server is available at http://localhost:" + port)
+	slog.Info("main::main() - Web Server is available at http://" + host + ":" + port)
 	slog.Info("main::main() - Press Ctrl+C to stop")
 	if err := srv.RunServer(context.Background(), 5*time.Second); err != nil {
 		slog.Error("main::main() - Server error", "error", err)

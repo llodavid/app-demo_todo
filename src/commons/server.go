@@ -15,20 +15,20 @@ type Server struct {
 	hs *http.Server
 }
 
-func NewServer(router *http.ServeMux, port string) *Server {
+func NewServer(router *http.ServeMux) (*Server, error) {
 	fs := http.FileServer(http.Dir("./public"))
 	router.Handle("GET /public/", http.StripPrefix("/public/", fs))
 	//
-	intPort := port
+	port := os.Getenv("APP_PORT")
 	if IsRunningInDockerContainer() {
 		// internal port is always 80; see dockerfile for port mapping
-		intPort = "80"
+		port = "80"
 	}
 	srv := http.Server{
-		Addr:    ":" + intPort,
+		Addr:    ":" + port,
 		Handler: router,
 	}
-	return &Server{hs: &srv}
+	return &Server{hs: &srv}, nil
 }
 
 func (s *Server) RunServer(
