@@ -7,18 +7,21 @@ MAKE_TIME = $(shell date +"%FT%H:%M:%SZ")
 all: run
 
 clean:
+	# clean ##################################################
 	rm -rf dist/
+	mkdir -p ./dist
 
 generate-twc: 
 # alternative for watched generation of css using "npm run dev"; 
 	npx @tailwindcss/cli -i ./src/resources/style.tailwindcss.css -o ./dist/public/style.css
 
-run: 
+run: generate-twc
 # run server from dist directory to easy access public files and to resemble situation after deployment;
 # for performance reasons, we don't generate css at development time for every run;
 	# run ##################################################
 	mkdir -p ./dist
 	cp -r ./src/resources ./dist
+	cp ./.env.example ./dist/.env
 	(cd ./dist && go run ../src) 
 
 build: clean generate-twc 
@@ -27,10 +30,10 @@ build: clean generate-twc
 	# build ##################################################
 	cp -r ./src/resources ./dist
 	go version
-# GOOS=windows GOARCH=amd64 go build -o dist/$(OCI_NAME)-windows.exe ./src
-# file dist/$(OCI_NAME)-windows.exe
-# GOOS=linux GOARCH=amd64 go build -o dist/$(OCI_NAME)-linux.exe ./src
-# file dist/$(OCI_NAME)-linux.exe
+# GOOS=windows GOARCH=amd64 go build -o dist/$(APP_NAME)-windows.exe ./src
+# file dist/$(APP_NAME)-windows.exe
+# GOOS=linux GOARCH=amd64 go build -o dist/$(APP_NAME)-linux.exe ./src
+# file dist/$(APP_NAME)-linux.exe
 	GOOS=linux GOARCH=amd64 go build -o dist/main.exe ./src
 # Cross-Compilation:
 # Install gcc-mingw toolchain on Ubuntu 24 for Windows cross-compilation:
@@ -40,6 +43,7 @@ build: clean generate-twc
 # Run command: (cd dist && ./main.exe)
 
 clean-db:
+	# clean-db ##################################################
 	rm -rf dist-db/
 	mkdir -p ./dist-db
 
@@ -51,7 +55,7 @@ test-db:
 	# sql scripts in src-db/resources/ are used for database migration
 	cp -r ./src-db/resources ./temp
 	# start mariadb container with mounted volumes for database and migration files;
-	docker run --name mydb --rm -d -v ./temp/db:/var/lib/mysql:Z  -v ./temp/resources:/docker-entrypoint-initdb.d -p $(DB_PORT):3306 -e MARIADB_USER=$(DB_USER) -e MARIADB_PASSWORD=$(DB_PASSWORD) -e MARIADB_ROOT_PASSWORD=$(DB_ROOT_PASSWORD) -e MARIADB_DATABASE=$(DB_NAME) mariadb:12.2 
+	docker run --name mydb --rm -d -v ./temp/db:/var/lib/mysql:Z  -v ./temp/resources:/docker-entrypoint-initdb.d -p $(OCI_DB_PORT):3306 --env-file ./.env mariadb:12.2 
 # docker exec -it mydb mariadb -uroot -p
 
 build-db: clean-db
@@ -63,23 +67,23 @@ build-db: clean-db
 
 build-oci: build
 	# build-oci ##################################################
-	docker build . -t $(OCI_NAME):latest --label "version=${OCI_VERSION}" --label "build=$(MAKE_TIME)"
-	docker image ls | grep $(OCI_NAME) 
-	docker image inspect $(OCI_NAME):latest
+	docker build . -t $(APP_NAME):latest --label "version=${APP_VERSION}" --label "build=$(MAKE_TIME)"
+	docker image ls | grep $(APP_NAME) 
+	docker image inspect $(APP_NAME):latest
 	
 run-oci: 
 	# run-oci ##################################################
-	docker run  --name myapp --rm -p $(OCI_PORT):$(OCI_INT_PORT) -e OCI_PORT=$(OCI_PORT) -e DB_PORT=$(DB_PORT) -e DB_HOST=host.docker.internal -e DB_USER=$(DB_USER) -e DB_PASSWORD=$(DB_PASSWORD) -e DB_NAME=$(DB_NAME) -e LOG_LEVEL=debug $(OCI_NAME):latest
+	docker run  --name myapp --rm -p $(APP_PORT):80 -e APP_PORT=$(APP_PORT) -e DB_DSN="$(DB_DSN_OCI)" -e LOG_LEVEL=debug $(APP_NAME):latest
 
 save-oci:
 	# save-oci ##################################################
 	mkdir -p ./temp
-	docker save -o temp/$(OCI_NAME).tar $(OCI_NAME):latest
-	du -sh temp/$(OCI_NAME).tar
-# docker rmi $(OCI_NAME):latest
+	docker save -o temp/$(APP_NAME).tar $(APP_NAME):latest
+	du -sh temp/$(APP_NAME).tar
+# docker rmi $(APP_NAME):latest
 
 load-oci:
 	# load-oci ##################################################
-	docker load -i temp/$(OCI_NAME).tar
-	docker image ls | grep $(OCI_NAME)
+	docker load -i temp/$(APP_NAME).tar
+	docker image ls | grep $(APP_NAME)
 

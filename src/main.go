@@ -1,31 +1,24 @@
 package main
 
 import (
+	"RobertTC32/example-demo_hello/src/app"
+	"RobertTC32/example-demo_hello/src/commons"
 	"context"
-	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 )
 
-var storage *Storage
+var storage *app.Storage
 
 func main() {
-	LoadEnvFile()
-	InitLoggerFromEnv()
+	commons.LoadEnvFile()
+	commons.InitLoggerFromEnv()
 	slog.Debug("main::main() - Started")
 	//
-	config := StorageConfig{
-		Username: os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		DbName:   os.Getenv("DB_NAME"),
-		Port:     os.Getenv("DB_PORT"),
-		Host:     os.Getenv("DB_HOST"),
-	}
-	slog.Debug("main::main() - Storage config", "config", config)
-	//
-	storageVal, err := NewStorage(config)
+	dsn := os.Getenv("DB_DSN")
+	storageVal, err := app.NewStorage(dsn)
 	if err != nil {
 		slog.Error("main::main() - Failed to create storage", "error", err)
 		return
@@ -33,29 +26,19 @@ func main() {
 	storage = &storageVal
 	defer storage.Destroy()
 	//
-	port := os.Getenv("OCI_PORT")
-	intPort := os.Getenv("OCI_INT_PORT")
-	if !IsRunningInDockerContainer() {
-		intPort = port
+	router := http.NewServeMux()
+	_, err = app.NewUi(router, storage)
+	if err != nil {
+		slog.Error("main::main() - Failed to create ui", "error", err)
+		return
 	}
-	srv := NewServer(port, intPort)
+	//
+	port := os.Getenv("APP_PORT")
+	srv := commons.NewServer(router, port)
+	slog.Info("main::main() - Web Server is available at http://localhost:" + port)
+	slog.Info("main::main() - Press Ctrl+C to stop")
 	if err := srv.RunServer(context.Background(), 5*time.Second); err != nil {
 		slog.Error("main::main() - Server error", "error", err)
 	}
-}
-
-func listHandleFunc(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("main::listHandleFunc() - Started")
-	slog.Debug("main::listHandleFunc() - Reading data", "storage", storage.config.DbName)
-	d, err := storage.FindAllTodos()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	//
-	slog.Debug("main::listHandleFunc() - Building response")
-	tmpl := template.Must(template.ParseFiles("./resources/list.html"))
-	err = tmpl.Execute(w, d)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	slog.Info("main::main() - Stopped")
 }

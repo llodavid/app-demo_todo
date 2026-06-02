@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"database/sql"
@@ -10,23 +10,15 @@ import (
 )
 
 type Storage struct {
-	config *StorageConfig
-	db     *sql.DB
+	dsn string
+	db  *sql.DB
 }
 
-type StorageConfig struct {
-	Username string
-	Password string
-	DbName   string
-	Port     string
-	Host     string
-}
-
-func NewStorage(conf StorageConfig) (Storage, error) {
+func NewStorage(dataSourceName string) (Storage, error) {
 	slog.Debug("storage::NewStorage() - Started")
-	dsnFormat := "%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Local"
-	dsn := fmt.Sprintf(dsnFormat, conf.Username, conf.Password, conf.Host, conf.Port, conf.DbName)
-	db, err := sql.Open("mysql", dsn)
+	//dsnFormat := "%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Local"
+	//dsn := fmt.Sprintf(dsnFormat, Username, Password, Host, Port, DbName)
+	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		return Storage{}, fmt.Errorf("Failed to open SQL connection: %w", err)
 	}
@@ -34,16 +26,15 @@ func NewStorage(conf StorageConfig) (Storage, error) {
 	if err != nil {
 		return Storage{}, fmt.Errorf("Failed to ping db: %w", err)
 	}
-	slog.Debug("storage::NewStorage() - Database opened", "dbName", conf.DbName)
+	slog.Debug("storage::NewStorage() - Database opened", "dataSourceName", dataSourceName)
 	return Storage{
-		config: &conf,
-		db:     db,
+		dsn: dataSourceName,
+		db:  db,
 	}, nil
 }
 
 func (s Storage) Destroy() error {
 	slog.Debug("storage::Destroy() - Started")
-	s.config = nil
 	return s.db.Close()
 }
 

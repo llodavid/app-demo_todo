@@ -1,4 +1,4 @@
-package main
+package commons
 
 import (
 	"context"
@@ -15,18 +15,19 @@ type Server struct {
 	hs *http.Server
 }
 
-func NewServer(port string, intPort string) *Server {
-	router := http.NewServeMux()
-	router.HandleFunc("/", listHandleFunc)
+func NewServer(router *http.ServeMux, port string) *Server {
 	fs := http.FileServer(http.Dir("./public"))
 	router.Handle("GET /public/", http.StripPrefix("/public/", fs))
 	//
+	intPort := port
+	if IsRunningInDockerContainer() {
+		// internal port is always 80; see dockerfile for port mapping
+		intPort = "80"
+	}
 	srv := http.Server{
 		Addr:    ":" + intPort,
 		Handler: router,
 	}
-	slog.Info("server::NewServer() - Web Server is available at http://localhost:" + port)
-	slog.Info("server::NewServer() - Press Ctrl+C to stop")
 	return &Server{hs: &srv}
 }
 
