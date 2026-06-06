@@ -1,4 +1,4 @@
-package app
+package todo_dto
 
 import (
 	"time"
@@ -6,7 +6,10 @@ import (
 	gonull "github.com/LukaGiorgadze/gonull/v2"
 )
 
-type Mappingtest1 struct {
+// "dto" contains Data Transfert Objects which are used to transfer data between layers;
+// the dto package should not depend on any other packages in the application (to prevent circular dependencies)
+
+type Dbmapping1 struct {
 	Id uint32
 	// numbers
 	Anint           *int32
@@ -24,7 +27,7 @@ type Mappingtest1 struct {
 	Ablob     *[]byte
 }
 
-type Mappingtest2 struct {
+type Dbmapping2 struct {
 	Id uint32
 	// numbers
 	Anint           gonull.Nullable[int32]

@@ -1,6 +1,6 @@
 -- +goose Up
 
-CREATE TABLE IF NOT EXISTS mappingtest (
+CREATE TABLE IF NOT EXISTS dbmapping (
     id int unsigned NOT NULL AUTO_INCREMENT,
     -- numbers
     anint int, -- in Go: int32
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS mappingtest (
     PRIMARY KEY (id)
 );
 
-INSERT INTO mappingtest (anint, abigint, anintunsighed, abigintunsigned, adecimal, afloat, adouble, aboolean, avarchar, adatetime, ablob) 
+INSERT INTO dbmapping (anint, abigint, anintunsighed, abigintunsigned, adecimal, afloat, adouble, aboolean, avarchar, adatetime, ablob) 
 VALUES
     (-42, -123456789, 100, 200, 123.45, 123.456789, 123.456789, TRUE, 'Bake a cake', STR_TO_DATE('2025-02-18 15:44:04', '%Y-%m-%d %H:%i:%s'), NULL),
     (0, 0, 0, 0, 0.0, 0.0, 0.0, FALSE, '', 0, NULL),
@@ -29,4 +29,4 @@ VALUES
 
 -- +goose Down
 
-DROP TABLE IF EXISTS mappingtest;
+DROP TABLE IF EXISTS dbmapping;
